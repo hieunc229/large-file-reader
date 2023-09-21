@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "rumbo": ["packages/rumbo/src"],
+      "rumbo/*": ["packages/rumbo/src/*"],
+      "*": ["*"],
+      // "@/*": ["includes/*"],
+      // "@/inc/*": ["includes/inc/*"]
+    }
+  },
+  "extends": "@tsconfig/node-lts-strictest-esm/tsconfig.json"
+}
