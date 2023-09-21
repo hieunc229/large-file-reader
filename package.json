@@ -9,7 +9,7 @@
     "build-only": "yarn bundle-clientssr && tsc && yarn copy-assets && yarn bundle-client && yarn bundle-server",
     "build": "yarn build-only",
     "prebuild": "yarn clean",
-    "postbuild": "cp -r dist/ bundle/public/",
+    "postbuild": "cp -r dist/ bundle/public/ && cp -r main/ bundle/",
     "copy-assets": "copyfiles src/**/*.css build/",
     "bundle-clientssr": "NODE_PATH=src/ ts-node scripts/bundle-clientssr.ts",
     "bundle-client": "NODE_PATH=src/ ts-node scripts/bundle-client.ts",

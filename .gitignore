@@ -3,3 +3,5 @@
 __rumbo
 dist
 node_modules
+build
+bundle
