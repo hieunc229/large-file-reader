@@ -10,10 +10,13 @@ import { Toaster } from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight } from "iconsax-react";
+import FinderView from "./components/FinderView";
+import { convertBytes, formatNumber } from "./components/utils";
 
 type State = {
   path: string;
   page: number;
+  size?: number;
 };
 
 const pageSize = 5000;
@@ -33,7 +36,26 @@ export default function Home() {
       });
       fetchStats(params.get("path"));
     }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return function () {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [params, content]);
+
+  function handleKeyDown(ev: KeyboardEvent) {
+    if (!ev.shiftKey && content) {
+      switch (ev.key) {
+        case "ArrowLeft":
+          prev();
+          break;
+        case "ArrowRight":
+          next();
+          break;
+      }
+    }
+  }
 
   function next() {
     setPage(state.page + 1);
@@ -61,7 +83,9 @@ export default function Home() {
     setState(nstate);
 
     fetch(
-      `/api/content?path=${nstate.path}&page=${nstate.page}&bytes=${pageSize}`
+      `/api/content?path=${nstate.path}&page=${nstate.page}&bytes=${
+        nstate.size || pageSize
+      }`
     )
       .then((rs) => rs.text())
       .then((rs) => {
@@ -90,52 +114,51 @@ export default function Home() {
     }
   }
 
+  function handleFileSelected(entity: EntityProps) {
+    setStats(entity as any);
+    fetchContent({
+      path: entity.path,
+      page: 0,
+      size: entity.size > pageSize ? pageSize : entity.size,
+    });
+  }
+
   return (
-    <div className="h-screen w-screen bg-zinc-100 flex flex-col">
-      <ContentView content={content} />
-      <div className="flex flex-row gap-4 py-2 px-4 items-center text-xs bg-white shadow-lg">
-        {state?.path && stats ? (
-          <>
-            <p className="flex-1">
-              <Input
-                onKeyDown={handleSetPath}
-                name="path"
-                className="flex-1"
-                placeholder={`${decodeURIComponent(state.path)} (${convertBytes(stats.size)})`}
+    <div className="h-screen w-screen bg-zinc-100 flex flex-row">
+      <FinderView className="shadow-lg" onSelect={handleFileSelected} />
+      <div className="flex-1 flex flex-col border-l">
+        <div className="flex flex-row gap-4 py-1 px-4 items-center text-xs bg-white border-b">
+          {stats ? (
+            <>
+              <p className="flex-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
+                {state.path.split("/").pop()}{" "}
+                <span className="opacity-40">({convertBytes(stats.size)})</span>
+              </p>
+              <Button
+                size="sm"
+                theme="lightC1"
+                onClick={prev}
+                icon={ArrowLeft}
               />
-              
-            </p>
-            <Button theme="lightC1" onClick={prev} icon={ArrowLeft} />
-            <Input
-              // className="w-"
-              placeholder={formatNumber(state.page) as any}
-              onKeyDown={handleNavigate}
-            />
-            / {formatNumber(Math.floor(stats.size / pageSize))} pages
-            <Button theme="lightC1" onClick={next} icon={ArrowRight} />
-          </>
-        ) : (
-          <Input
-            onKeyDown={handleSetPath}
-            name="path"
-            className="flex-1"
-            placeholder="File path, then Enter"
-          />
-        )}
+              <Input
+                placeholder={formatNumber(state.page) as any}
+                onKeyDown={handleNavigate}
+              />
+              / {formatNumber(Math.floor(stats.size / pageSize))} pages
+              <Button
+                size="sm"
+                theme="lightC1"
+                onClick={next}
+                icon={ArrowRight}
+              />
+            </>
+          ) : (
+            <i className="py-2">(no file selected)</i>
+          )}
+        </div>
+        <ContentView content={content} fileName={state?.path || ""} />
       </div>
       <Toaster />
     </div>
   );
-}
-
-function convertBytes(bytes: number) {
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  if (bytes === 0) return "0 Byte";
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  const convertedValue = (bytes / Math.pow(1024, i)).toFixed(2);
-  return `${convertedValue} ${sizes[i]}`;
-}
-
-function formatNumber(number: number) {
-  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
