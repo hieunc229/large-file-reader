@@ -11,7 +11,7 @@
       "js": "node --harmony"
     },
     "watch": [
-      "src/routes/api",
+      "src/apps/api",
       "src/packages"
     ],
     "env": {
